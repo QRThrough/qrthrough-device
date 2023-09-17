@@ -3,11 +3,13 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Arduino_JSON.h>
-#include <ArduinoOTA.h>
 #include <MQTT.h>
+#include <WebServer.h>
+#include <Update.h>
 
-//#define DEBUG
-//#define VERSION_MQTT
+WebServer server(80);
+#define DEBUG
+#define VERSION_MQTT
 
 #ifdef DEBUG
   const char ssid[] = "Taohuu_2.4G";
@@ -19,14 +21,16 @@
   // const char pass[] = "trqzz0kt";
 #endif
 
-const char mqtt_broker[]="test.mosquitto.org";
+const char mqtt_broker[]="45.136.237.10";
 const char mqtt_topic[]="monitor";
 const char mqtt_client_id[]="qr_through_baan_nc"; // must change this string to a unique value
+const char mqtt_user[]="qrthrough";
+const char mqtt_pass[]="arnan1234";
 int MQTT_PORT=1883;
 
 #define LED 23
 #define RELAY 19
-#define RESET_DISCONNECTED 60 * 60 * 1000
+#define RESET_DISCONNECTED 30 * 60 * 1000
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(8, LED, NEO_GRB + NEO_KHZ800);
 SoftwareSerial mySerial(17, 16); // TX, RX
@@ -58,6 +62,146 @@ bool publishStatus = false;
 bool onProcess = false;
 uint countLoss = 0;
 
+const char* loginIndex = 
+ "<form name='loginForm'>"
+    "<table width='20%' bgcolor='A09F9F' align='center'>"
+        "<tr>"
+            "<td colspan=2>"
+                "<center><font size=4><b>QRThrough ESP32(Baan.NC) Login Page</b></font></center>"
+                "<br>"
+            "</td>"
+            "<br>"
+            "<br>"
+        "</tr>"
+        "<td>Username:</td>"
+        "<td><input type='text' size=25 name='userid'><br></td>"
+        "</tr>"
+        "<br>"
+        "<br>"
+        "<tr>"
+            "<td>Password:</td>"
+            "<td><input type='Password' size=25 name='pwd'><br></td>"
+            "<br>"
+            "<br>"
+        "</tr>"
+        "<tr>"
+            "<td><input type='submit' onclick='check(this.form)' value='Login'></td>"
+        "</tr>"
+    "</table>"
+"</form>"
+"<script>"
+    "function check(form)"
+    "{"
+    "if(form.userid.value=='qrthrough' && form.pwd.value=='arnan1234')"
+    "{"
+    "window.open('/serverIndex')"
+    "}"
+    "else"
+    "{"
+    " alert('Error Password or Username')/*displays error message*/"
+    "}"
+    "}"
+"</script>";
+ 
+
+// หน้า Index Page
+const char* serverIndex = 
+"<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
+"<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
+   "<input type='file' name='update'>"
+        "<input type='submit' value='Update'>"
+    "</form>"
+ "<div id='prg'>progress: 0%</div>"
+ "<script>"
+  "$('form').submit(function(e){"
+  "e.preventDefault();"
+  "let pass = prompt('Please enter your password');"
+  "if(pass === 'arnan1234')"
+    "{"
+  "var form = $('#upload_form')[0];"
+  "var data = new FormData(form);"
+  " $.ajax({"
+  "url: '/update',"
+  "type: 'POST',"
+  "data: data,"
+  "contentType: false,"
+  "processData:false,"
+  "xhr: function() {"
+  "var xhr = new window.XMLHttpRequest();"
+  "xhr.upload.addEventListener('progress', function(evt) {"
+  "if (evt.lengthComputable) {"
+  "var per = evt.loaded / evt.total;"
+  "$('#prg').html('progress: ' + Math.round(per*100) + '%');"
+  "}"
+  "}, false);"
+  "return xhr;"
+  "},"
+  "success:function(d, s) {"
+  "console.log('success!')" 
+ "},"
+ "error: function (a, b, c) {"
+ "}"
+ "});"
+  "}"
+    "else"
+    "{"
+    " alert('Error Password mismatched')/*displays error message*/"
+    "}"
+ "});"
+ "</script>";
+
+void setup() {
+  // put your setup code here, to run once:
+  mySerial.begin(9600); // set the data rate for the SoftwareSerial port
+  Serial.begin(9600);
+  WiFi.begin(ssid, pass);
+  pinMode(RELAY,OUTPUT);
+  pixels.begin();
+  pixels.show();
+  #ifdef VERSION_MQTT
+    client.begin(mqtt_broker, MQTT_PORT, net);
+    client.onMessage(messageReceived);
+  #endif
+  connect();
+  webSetup();
+}
+
+void loop() {
+
+  server.handleClient();
+  delay(1);
+
+  if (WiFi.status() != WL_CONNECTED) {
+    connect();
+  }
+
+  #ifdef VERSION_MQTT
+  client.loop();
+  delay(10);  // <- fixes some issues with WiFi stability
+    if (!client.connected()) {
+      MQTTconnect();
+    }
+  #endif
+
+  if(!SERVER_ACTIVE) {
+    APIconnect();
+  }
+
+  #ifdef VERSION_MQTT
+  if(publishStatus){
+    client.publish(mqtt_topic, "STATUS | DOOR MODE : " + doorModeToString(DOOR_STATUS) + " | SCANNER ACTIVE : "  + (SCANNER_ACTIVE ? "TRUE" : "FALSE") + " | API ACTIVE : "  + (SERVER_ACTIVE ? "TRUE" : "FALSE") + " | LOCAL ID : " + WiFi.localIP().toString());
+    publishStatus = false;
+  }
+  #endif
+
+  // put your main code here, to run repeatedly:
+  if (mySerial.available() && !onProcess && SCANNER_ACTIVE) // Check if there is Incoming Data in the Serial Buffer.
+  {
+    String qrCode = mySerial.readString();
+    handleQRCode(qrCode);
+  }
+}
+
 void connect() {
   WIFIconnect();
   #ifdef VERSION_MQTT
@@ -65,6 +209,39 @@ void connect() {
   #endif
   APIconnect();
   ledService(ALL_CONNECTED);
+}
+
+void WIFIconnect(){
+  setLED(WIFI_CONNECTING);
+  Serial.print("checking wifi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    if(countLoss >= RESET_DISCONNECTED){
+      Serial.println("Reset..");
+      ESP.restart();       // reset ESP command
+    }
+    Serial.print(".");
+    countLoss += 1;
+    delay(1000);
+  }
+  countLoss = 0;
+  Serial.println("\nwifi connected!");
+}
+
+void MQTTconnect(){
+  setLED(INVALID_QR);
+  Serial.print("\nconnecting MQTT...");
+  while (!client.connect(mqtt_client_id,mqtt_user,mqtt_pass)) {  
+    Serial.print(".");
+    delay(1000);
+    if (WiFi.status() != WL_CONNECTED) {
+      WIFIconnect();
+    }
+  }
+  client.subscribe("door_manager");
+  client.subscribe("controller");
+  client.subscribe("status");
+  Serial.println("\nMQTT connected!");
+  setLED(CLEAR);
 }
 
 void messageReceived(String &topic, String &payload) {
@@ -86,71 +263,26 @@ void messageReceived(String &topic, String &payload) {
     }
   }
 
-  if(topic == "scanner_manager"){
-    if(payload == "off"){
-      SCANNER_ACTIVE = false;
-    }else{
-      SCANNER_ACTIVE = true;
-    }
+  if(topic == "controller"){
+    if(payload == "reset") ESP.restart();
   }
 
   if(topic == "status"){
     publishStatus = true;
   }
-  // Note: Do not use the client in the callback to publish, subscribe or
-  // unsubscribe as it may cause deadlocks when other things arrive while
-  // sending and receiving acknowledgments. Instead, change a global variable,
-  // or push to a queue and handle it in the loop after calling `client.loop()`.
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  mySerial.begin(9600); // set the data rate for the SoftwareSerial port
-  Serial.begin(9600);
-  WiFi.begin(ssid, pass);
-  pinMode(RELAY,OUTPUT);
-  pixels.begin();
-  pixels.show();
-  #ifdef VERSION_MQTT
-    client.begin(mqtt_broker, MQTT_PORT, net);
-    client.onMessage(messageReceived);
-  #endif
-  connect();
-  OTASetup();
-}
-
-void loop() {
-  ArduinoOTA.handle();
-
-  if (WiFi.status() != WL_CONNECTED) {
-    connect();
+void APIconnect(){
+  setLED(SYSTEM_FAILED);
+  Serial.print("\nconnecting API...");
+  checkHealthAPI();
+  while (!SERVER_ACTIVE) {
+    Serial.print(".");
+    delay(5000);
+    checkHealthAPI();
   }
-
-  #ifdef VERSION_MQTT
-  client.loop();
-  delay(10);  // <- fixes some issues with WiFi stability
-    if (!client.connected()) {
-      MQTTconnect();
-    }
-  #endif
-
-  if(!SERVER_ACTIVE) {
-    APIconnect();
-  }
-
-  #ifdef VERSION_MQTT
-  if(publishStatus){
-    client.publish(mqtt_topic, "STATUS | DOOR MODE : " + String(DOOR_STATUS) + " | SCANNER ACTIVE : "  + String(SCANNER_ACTIVE) + " | API ACTIVE : "  + String(SERVER_ACTIVE));
-    publishStatus = false;
-  }
-  #endif
-
-  // put your main code here, to run repeatedly:
-  if (mySerial.available() && !onProcess && SCANNER_ACTIVE) // Check if there is Incoming Data in the Serial Buffer.
-  {
-    String qrCode = mySerial.readString();
-    handleQRCode(qrCode);
-  }
+  Serial.println("\nAPI connected!");
+  setLED(CLEAR);
 }
 
 void checkHealthAPI(){
@@ -175,50 +307,48 @@ void checkHealthAPI(){
   }
 }
 
-void MQTTconnect(){
-  setLED(INVALID_QR);
-  Serial.print("\nconnecting MQTT...");
-  while (!client.connect(mqtt_client_id)) {  
-    Serial.print(".");
-    delay(1000);
-    if (WiFi.status() != WL_CONNECTED) {
-      WIFIconnect();
-    }
-  }
-  client.subscribe("door_manager");
-  client.subscribe("scanner_manager");
-  client.subscribe("status");
-  Serial.println("\nMQTT connected!");
-  setLED(CLEAR);
-}
+void webSetup(){
+  // แสดงหน้า Server Index หลังจาก Login
+  server.on("/", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", loginIndex);
+  });
+  server.on("/serverIndex", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", serverIndex);
+  });
+  
+// ขั้นตอนการ Upload ไฟล์
+  server.on("/update", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+  }, []() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        Serial.printf("Error 1");
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
 
-void APIconnect(){
-  setLED(SYSTEM_FAILED);
-  Serial.print("\nconnecting API...");
-  checkHealthAPI();
-  while (!SERVER_ACTIVE) {
-    Serial.print(".");
-    delay(5000);
-    checkHealthAPI();
-  }
-  Serial.println("\nAPI connected!");
-  setLED(CLEAR);
-}
-
-void WIFIconnect(){
-  setLED(WIFI_CONNECTING);
-  Serial.print("checking wifi...");
-  while (WiFi.status() != WL_CONNECTED) {
-    if(countLoss >= RESET_DISCONNECTED){
-      Serial.println("Reset..");
-      ESP.restart();       // reset ESP command
+// แฟลช(เบิร์นโปรแกรม)ลง ESP32
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
     }
-    Serial.print(".");
-    countLoss += 1;
-    delay(1000);
-  }
-  countLoss = 0;
-  Serial.println("\nwifi connected!");
+  });
+  server.begin();
+  Serial.println("WebOTA Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void handleQRCode(String qrCode){
@@ -346,46 +476,15 @@ void setLED(COLOR_STATUS status){
   pixels.show();
 }
 
-void OTASetup(){
-//ตั้งค่า Hostname เป็น esp3232-[MAC]
-  ArduinoOTA.setHostname("qr-through-bann.nc");
-  ArduinoOTA.setPassword("baan.nc");
-  
-
-// ส่วนของ OTA
-  ArduinoOTA
-    .onStart([]() {
-      String type;          // ประเภทของ OTA ที่เข้ามา
-      if (ArduinoOTA.getCommand() == U_FLASH)         // แบบ U_FLASH
-        type = "sketch";
-      else          // แบบ U_SPIFFS
-        type = "filesystem";
-
-      // NOTE: ถ้าใช้เป็นแบบ SPIFFS อาจใช้คำสั่ง SPIFFS.end()
-      Serial.println("Start updating " + type);
-    })
-    .onEnd([]() {
-      Serial.println("\nEnd");
-    })
-
-    // เริ่มทำงาน (รับข้อมูลโปรแกรม) พร้อมแสดงความคืบหน้าทาง Serial Monitor
-    .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    })
-
-    // แสดงข้อความต่างๆหากเกิด Error ขึ้น
-    .onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-
-  ArduinoOTA.begin();
-
-  Serial.println("OTA Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+String doorModeToString(DOOR_MODE mode) {
+  switch (mode) {
+    case ON:
+      return "ON";
+    case OFF:
+      return "OFF";
+    case AUTO:
+      return "AUTO";
+    default:
+      return "UNKNOWN"; // Handle unknown enum values
+  }
 }
