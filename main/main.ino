@@ -8,17 +8,17 @@
 #include <Update.h>
 
 WebServer server(80);
-#define DEBUG
+//#define DEBUG
 #define VERSION_MQTT
 
 #ifdef DEBUG
   const char ssid[] = "Taohuu_2.4G";
   const char pass[] = "Huu12345";
 #else
-  const char ssid[] = "@JumboPlusIoT";
-  const char pass[] = "0jycjtfn";
   // const char ssid[] = "@JumboPlusIoT";
-  // const char pass[] = "trqzz0kt";
+  // const char pass[] = "0jycjtfn";
+  const char ssid[] = "@JumboPlusIoT";
+  const char pass[] = "trqzz0kt";
 #endif
 
 const char mqtt_broker[]="45.136.237.10";
