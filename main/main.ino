@@ -12,11 +12,9 @@ WebServer server(80);
 #define VERSION_MQTT
 
 #ifdef DEBUG
-  const char ssid[] = "Taohuu_2.4G";
-  const char pass[] = "Huu12345";
+  const char ssid[] = "";
+  const char pass[] = "";
 #else
-  // const char ssid[] = "@JumboPlusIoT";
-  // const char pass[] = "0jycjtfn";
   const char ssid[] = "@JumboPlusIoT";
   const char pass[] = "trqzz0kt";
 #endif
@@ -30,7 +28,7 @@ int MQTT_PORT=1883;
 
 #define LED 23
 #define RELAY 19
-#define RESET_DISCONNECTED 30 * 60 * 1000
+#define RESET_DISCONNECTED 10 * 60
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(8, LED, NEO_GRB + NEO_KHZ800);
 SoftwareSerial mySerial(17, 16); // TX, RX

@@ -1,92 +1,185 @@
-# scanner-access-control
+# QRThrough: Scanner Access Control
 
-
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/qr-through/device/scanner-access-control.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/qr-through/device/scanner-access-control/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
+**<p style ="text-align: center;">A hardware project for access control system using QR code scanner and ESP32 micro-controller.</p>**
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+The project is a part of the QRThrough system, which is a system for managing access control using QR code scanner. The system consists of three main parts: the scanner-access-control, front-end, and back-end. The scanner-access-control is a hardware device that is used to scan the QR code and control the access of the door. The front-end is a web application that is used to register the user and manage the system by the moderator. The back-end is a server that is used to store the data, generate the QR code, handle one-time password, connect with [LINE](https://line.me/th/) chat via [LINE Messaging API](https://developers.line.biz/en/services/messaging-api/), and manage the system.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Components
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+- ESP32-DevKitC V4
+- Embedded 2d scanner platform
+- NeoPixels RGB LED strip bar
+- Relay module 5V low-trigger
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## Getting Started
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+To develop the scanner-access-control, you need to install the Arduino IDE and the ESP32 board package. You can follow the instructions below to install the Arduino IDE and the ESP32 board package.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### Prerequisites
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+The first instruction is to install the Arduino IDE. You can download the Arduino IDE from the [official website](https://www.arduino.cc/en/software). After downloading the Arduino IDE, you can install it by following the instructions on the website.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+The second instruction is to install the ESP32 board package. You can follow the instructions with this link [Installing the ESP32 Board in Arduino IDE (Windows, Mac OS X, Linux)](https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/).
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### Packages
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+The scanner-access-control uses the following libraries:
 
-## License
-For open source projects, say how it is licensed.
+- SoftwareSerial
+- Adafruit_NeoPixel
+- WiFi
+- HTTPClient
+- ArduinoJson
+- MQTT
+- WebServer
+- Update
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Setup
+
+The scanner-access-control consists of two main parts: the setup and the loop. The setup is the part where the device starts working. The setup consists of the following parts:
+
+- System configuration
+
+```
+WebServer server(80); // ตั้งค่า port เว็บสำหรับ OTA อัพเดต patch โปรแกรมของ module นี้
+//#define DEBUG // กำหนดโหมด DEBUG
+#define VERSION_MQTT // กำหนดใช้งานเวอร์ชั่น MQTT
+
+// ตั้งค่าการเชื่อมต่อ WiFi
+#ifdef DEBUG
+  const char ssid[] = "";
+  const char pass[] = "";
+#else
+  const char ssid[] = "@JumboPlusIoT"; // กำหนด username สำหรับเชื่อมต่อ WiFi
+  const char pass[] = "trqzz0kt"; // กำหนด password สำหรับเชื่อมต่อ WiFi
+#endif
+
+// ตั้งค่าการเชื่อมต่อ MQTT
+const char mqtt_broker[]="45.136.237.10";
+const char mqtt_topic[]="monitor";
+const char mqtt_client_id[]="qr_through_baan_nc";
+const char mqtt_user[]="qrthrough";
+const char mqtt_pass[]="arnan1234";
+int MQTT_PORT=1883;
+
+#define LED 23 // กำหนด PIN ของ LED stripe
+#define RELAY 19 // กำหนด PIN ของ Relay
+#define RESET_DISCONNECTED 30 * 60 * 1000 // กำหนดเวลารีเซ็ทเครื่องหากขาดการเชื่อมต่อ WiFi
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(8, LED, NEO_GRB + NEO_KHZ800);
+SoftwareSerial mySerial(17, 16); // กำหนด PIN ของ TX, RX สำหรับสื่อสารกับเครื่องอ่าน QR code
+```
+
+- End-point API configuration
+
+```
+  const String host = "https://api.qr-through.com/api/";
+  const String apiUrl = host + "device/scanner/";
+```
+
+- Setup process
+
+```
+void setup() {
+  Serial.begin(115200); // เปิด Serial port สำหรับ debug
+  mySerial.begin(9600); // เปิด Serial port สำหรับสื่อสารกับเครื่องอ่าน QR code
+  WiFi.begin(ssid, pass); // เชื่อมต่อ WiFi
+  pinMode(RELAY, OUTPUT); // กำหนด PIN ของ Relay เป็น OUTPUT
+  pixels.begin(); // เปิดใช้งาน LED stripe
+  pixels.show(); // แสดงสีของ LED stripe
+  #ifdef VERSION_MQTT
+    client.begin(mqtt_broker, MQTT_PORT, net); // เชื่อมต่อ MQTT
+    client.onMessage(messageReceived); // กำหนดฟังก์ชันที่จะทำงานเมื่อมีข้อความเข้ามา
+  #endif
+  connect(); // procedure ตรวจสอบการเชื่อมต่อต่างๆ
+  webSetup(); // procedure ตั้งค่าเว็บเซิร์ฟเวอร์สำหรับ OTA อัพเดต patch โปรแกรมของ module นี้
+}
+```
+
+The loop is the part where the device works continuously. The loop consists of the following parts:
+
+- Loop process
+
+```
+void loop() {
+
+  server.handleClient(); // ตรวจสอบการเชื่อมต่อเว็บเซิร์ฟเวอร์
+  delay(1);
+
+  if (WiFi.status() != WL_CONNECTED) { // ตรวจสอบการเชื่อมต่อ WiFi
+    connect(); // procedure ตรวจสอบการเชื่อมต่อต่างๆ
+  }
+
+  #ifdef VERSION_MQTT
+  client.loop(); // ตรวจสอบการเชื่อมต่อ MQTT
+  delay(10);
+  if (!client.connected()) { // หากเชื่อมต่อ MQTT ไม่สำเร็จ
+    MQTTconnect(); // procedure เชื่อมต่อ MQTT
+  }
+  #endif
+
+  if(!SERVER_ACTIVE) { // หากเชื่อมต่อ API ไม่สำเร็จ
+    APIconnect(); // procedure เชื่อมต่อ API
+  }
+
+  #ifdef VERSION_MQTT
+  if(publishStatus){ // หากต้องการส่งข้อมูลสถานะ
+    client.publish(mqtt_topic, "STATUS | DOOR MODE : " + doorModeToString(DOOR_STATUS) + " | SCANNER ACTIVE : "  + (SCANNER_ACTIVE ? "TRUE" : "FALSE") + " | API ACTIVE : "  + (SERVER_ACTIVE ? "TRUE" : "FALSE") + " | LOCAL ID : " + WiFi.localIP().toString()); // ส่งข้อมูลสถานะ
+    publishStatus = false; // กำหนดให้ไม่ส่งข้อมูลสถานะ
+  }
+  #endif
+
+  if (mySerial.available() && !onProcess && SCANNER_ACTIVE) // ตรวจสอบข้อมูลที่รับเข้ามาจากเครื่องอ่าน QR code
+  {
+    String qrCode = mySerial.readString(); // อ่านข้อมูล QR code
+    handleQRCode(qrCode); // procedure ตรวจสอบข้อมูล QR code
+  }
+}
+```
+
+## Functions and Procedures specification
+
+The scanner-access-control consists of the following functions and procedures:
+
+| Function/Procedure | Description                                             | Parameters                     | Return |
+| ------------------ | ------------------------------------------------------- | ------------------------------ | ------ |
+| connect()          | Check the connection status of the WiFi, MQTT, and API. | None                           | None   |
+| WIFIconnect()      | Handle the connection status of the WiFi.               | None                           | None   |
+| MQTTconnect()      | Handle the connection status of the MQTT.               | None                           | None   |
+| messageReceived()  | Handle the message received from the MQTT.              | topic(String), payload(String) | None   |
+| APIconnect()       | Handle the connection status of the API.                | None                           | None   |
+| checkHealthAPI()   | Check the health status of the API.                     | None                           | None   |
+| webSetup()         | Setup the web server for OTA update.                    | None                           | None   |
+| handleQRCode()     | Handle the QR code data.                                | qrCode(String)                 | None   |
+| doorService()      | Control the door service to open                        | None                           | None   |
+| ledService()       | Control the LED service to show the status              | status(COLOR_STATUS)           | None   |
+| setLED()           | Set the color of the LED stripe.                        | status(COLOR_STATUS)           | None   |
+| doorModeToString() | Convert the door mode to string.                        | doorMode(DOOR_STATUS)          | String |
+
+## Deployment
+
+The scanner-access-control is deployed by uploading the code to the ESP32 micro-controller. You can follow the instructions below to upload the code to the ESP32 micro-controller.
+
+### Uploading
+
+The first instruction is to connect the ESP32 micro-controller to the computer using the USB cable. The second instruction is to select the board and port in the Arduino IDE. You can follow the instructions with this link [Installing the ESP32 Board in Arduino IDE (Windows, Mac OS X, Linux)](https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/). The third instruction is to upload the code to the ESP32 micro-controller. You can upload the code by clicking the upload button in the Arduino IDE.
+
+### Over-the-air
+
+The scanner-access-control can be updated over-the-air (OTA) by using the web server. You can follow the instructions below to update the scanner-access-control over-the-air.
+
+1. Open the web browser and go to the IP address of the scanner-access-control.
+
+2. Login to the web server by using the username and password.
+
+3. Click the "Choose File" button and select the firmware file.
+
+4. Click the "Update" button to update the firmware and enter the password.
+
+5. Wait for the scanner-access-control to update the firmware, If the process is reached 100%, the scanner-access-control will restart and the firmware will be updated.
+
+## Authors
+
+- [JM Jirapat](https://github.com/JMjirapat) - Developer
